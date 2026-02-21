@@ -127,12 +127,13 @@ def generate_questions():
     # Process easy
     for i in range(34):
         q = easy_pool[i % len(easy_pool)]
+        desc = f"Scenario: {q[2]}\n\nExample Test Case:\nInput: `{q[3]}`\nExpected Output: `{q[4]}`"
         all_qs.append({
             "id": id_counter,
             "difficulty": "Easy",
             "points": 100,
             "title": q[0],
-            "description": q[2],
+            "description": desc,
             "starter": q[1],
             "tests": [{"input": q[3], "expected": q[4]}],
             "hint": "Try writing out standard python.",
@@ -142,12 +143,13 @@ def generate_questions():
 
     for i in range(33):
         q = medium_pool[i % len(medium_pool)]
+        desc = f"Scenario: {q[2]}\n\nExample Test Case:\nInput: `{q[3]}`\nExpected Output: `{q[4]}`"
         all_qs.append({
             "id": id_counter,
             "difficulty": "Medium",
             "points": 200,
             "title": q[0],
-            "description": q[2],
+            "description": desc,
             "starter": q[1],
             "tests": [{"input": q[3], "expected": q[4]}],
             "hint": "Think about edge cases.",
@@ -157,12 +159,13 @@ def generate_questions():
         
     for i in range(33):
         q = hard_pool[i % len(hard_pool)]
+        desc = f"Scenario: {q[2]}\n\nExample Test Case:\nInput: `{q[3]}`\nExpected Output: `{q[4]}`"
         all_qs.append({
             "id": id_counter,
             "difficulty": "Hard",
             "points": 300,
             "title": q[0],
-            "description": q[2],
+            "description": desc,
             "starter": q[1],
             "tests": [{"input": q[3], "expected": q[4]}],
             "hint": "Optimize for time and space.",

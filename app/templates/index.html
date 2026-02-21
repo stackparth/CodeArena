@@ -355,7 +355,7 @@
                 </div>
 
                 <!-- RIGHT: EDITOR + RESULTS -->
-                <div class="flex-1 flex flex-col min-w-0 bg-background relative">
+                <div class="flex-1 flex flex-col min-w-0 bg-background relative" id="right-panel">
                     <div
                         class="flex items-center justify-between px-4 py-2 border-b border-border bg-card w-full shrink-0">
                         <span class="text-xs font-mono px-2 py-1 bg-secondary rounded text-muted-foreground">PYTHON
@@ -368,28 +368,52 @@
                         </div>
                     </div>
 
-                    <div id="editor-wrap" class="flex-1 shrink-0 min-h-0 relative">
-                        <div id="monaco-editor" class="absolute inset-0"></div>
+                    <!-- Editor + Results split container -->
+                    <div class="flex-1 flex flex-col min-h-0 overflow-hidden" id="split-container">
+                        <!-- EDITOR -->
+                        <div id="editor-wrap" class="relative"
+                            style="flex: 1 1 50%; min-height: 80px; overflow: hidden;">
+                            <div id="monaco-editor" class="absolute inset-0"></div>
+                        </div>
+
+                        <!-- DRAG HANDLE -->
+                        <div id="drag-handle"
+                            style="height:5px; background:#27272a; cursor:row-resize; flex-shrink:0; position:relative; z-index:10;"
+                            class="hover:bg-primary/50 transition-colors" title="Drag to resize">
+                            <div
+                                style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:40px;height:2px;background:#3f3f46;border-radius:2px;">
+                            </div>
+                        </div>
+
+                        <!-- RESULTS PANEL -->
+                        <div id="results-panel" class="flex bg-card border-t border-border overflow-hidden flex-col"
+                            style="flex: 1 1 50%; min-height: 80px; overflow-y:auto;">
+                            <div
+                                class="flex items-center justify-between px-4 py-2 border-b border-border sticky top-0 bg-card z-10">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Test
+                                    Results</span>
+                                <div class="flex items-center gap-3">
+                                    <span id="results-summary" class="text-xs text-muted-foreground"></span>
+                                    <button class="text-muted-foreground hover:text-foreground text-xs"
+                                        onclick="closeResultsPanel()">✕ Close</button>
+                                </div>
+                            </div>
+                            <div id="results-body" class="divide-y divide-border">
+                                <div id="results-placeholder"
+                                    class="flex flex-col items-center justify-center h-full py-12 text-muted-foreground text-sm gap-2">
+                                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5"
+                                        viewBox="0 0 24 24" class="opacity-40">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                    </svg>
+                                    <span class="opacity-50">Run &amp; Submit to see test results</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="verdict-banner"
                         class="hidden px-4 py-3 text-sm font-medium text-center border-t border-border shrink-0"></div>
-
-                    <div id="results-panel"
-                        class="hidden bg-card border-t border-border overflow-y-auto shrink-0 flex-col"
-                        style="resize: vertical; min-height: 100px; max-height: 70vh; height: 30vh;">
-                        <div
-                            class="flex items-center justify-between px-4 py-2 border-b border-border sticky top-0 bg-card z-10">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Test
-                                Results</span>
-                            <div class="flex items-center gap-3">
-                                <span id="results-summary" class="text-xs text-muted-foreground"></span>
-                                <button class="text-muted-foreground hover:text-foreground text-xs"
-                                    onclick="closeResultsPanel()">✕ Close</button>
-                            </div>
-                        </div>
-                        <div id="results-body" class="divide-y divide-border"></div>
-                    </div>
 
                     <div class="flex items-center justify-between px-4 py-3 border-t border-border bg-card shrink-0">
                         <div id="test-summary" class="text-sm text-muted-foreground">Run your code against test cases
@@ -465,31 +489,10 @@
 
         // ─── MONACO SETUP ────────────────────────────────────────────
         require(['vs/editor/editor.main'], function () {
-            monaco.editor.defineTheme('shadcn', {
-                base: 'vs-dark', inherit: true,
-                rules: [
-                    { token: 'keyword', foreground: 'c678dd' },
-                    { token: 'string', foreground: '98c379' },
-                    { token: 'comment', foreground: '5c6370' },
-                    { token: 'number', foreground: 'd19a66' },
-                    { token: 'type', foreground: 'e5c07b' },
-                    { token: 'function', foreground: '61afef' },
-                ],
-                colors: {
-                    'editor.background': '#09090b', // zinc-950
-                    'editor.foreground': '#fafafa',
-                    'editorCursor.foreground': '#fafafa',
-                    'editor.lineHighlightBackground': '#27272a80', // zinc-800 mostly transparent
-                    'editorLineNumber.foreground': '#52525b',
-                    'editorLineNumber.activeForeground': '#a1a1aa',
-                    'editor.selectionBackground': '#3f3f46',
-                    'editorIndentGuide.background': '#27272a',
-                }
-            });
             monacoEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
                 value: '# Your code here\n',
                 language: 'python',
-                theme: 'shadcn',
+                theme: 'vs-dark',
                 fontSize: 14,
                 fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
                 lineHeight: 24,
@@ -502,7 +505,7 @@
                 tabSize: 4,
                 insertSpaces: true,
                 wordWrap: 'on',
-                contextmenu: false,
+                contextmenu: true,
                 overviewRulerLanes: 0,
                 hideCursorInOverviewRuler: true,
                 glyphMargin: false,
@@ -510,6 +513,47 @@
             });
             const ro = new ResizeObserver(() => monacoEditor.layout());
             ro.observe(document.getElementById('editor-wrap'));
+
+            // ─── DRAG RESIZE HANDLE ──────────────────────────────────
+            const handle = document.getElementById('drag-handle');
+            const splitContainer = document.getElementById('split-container');
+            const editorWrap = document.getElementById('editor-wrap');
+            const resultsPanel = document.getElementById('results-panel');
+
+            let dragging = false;
+            let startY, startEditorH, startResultsH;
+
+            handle.addEventListener('mousedown', e => {
+                if (resultsPanel.classList.contains('hidden')) return;
+                dragging = true;
+                startY = e.clientY;
+                startEditorH = editorWrap.getBoundingClientRect().height;
+                startResultsH = resultsPanel.getBoundingClientRect().height;
+                document.body.style.cursor = 'row-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', e => {
+                if (!dragging) return;
+                const dy = e.clientY - startY;
+                const newEditorH = Math.max(80, startEditorH + dy);
+                const newResultsH = Math.max(80, startResultsH - dy);
+                editorWrap.style.flex = 'none';
+                editorWrap.style.height = newEditorH + 'px';
+                resultsPanel.style.flex = 'none';
+                resultsPanel.style.height = newResultsH + 'px';
+                monacoEditor.layout();
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (dragging) {
+                    dragging = false;
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                    monacoEditor.layout();
+                }
+            });
         });
 
         // ─── API ─────────────────────────────────────────────────────
@@ -648,11 +692,31 @@
 
             if (monacoEditor) {
                 monacoEditor.setValue(q.starter);
-                // ensure layout adjusts
-                setTimeout(() => monacoEditor.layout(), 100);
+                setTimeout(() => monacoEditor.layout(), 150);
             }
 
-            closeResultsPanel();
+            // Reset to 50:50 split with placeholder
+            const rPanel = document.getElementById('results-panel');
+            const editorWrap = document.getElementById('editor-wrap');
+            rPanel.classList.remove('hidden');
+            rPanel.classList.add('flex');
+            document.getElementById('results-body').innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full py-12 text-muted-foreground text-sm gap-2">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" class="opacity-40"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"/></svg>
+                    <span class="opacity-50">Run &amp; Submit to see test results</span>
+                </div>`;
+            document.getElementById('results-summary').textContent = '';
+            // Apply 50:50 split
+            editorWrap.style.flex = 'none';
+            rPanel.style.flex = 'none';
+            // Heights set after view switches so container has real dimensions
+            setTimeout(() => {
+                const totalH = document.getElementById('split-container').getBoundingClientRect().height;
+                editorWrap.style.height = Math.max(80, Math.floor(totalH / 2)) + 'px';
+                rPanel.style.height = Math.max(80, Math.floor(totalH / 2)) + 'px';
+                monacoEditor && monacoEditor.layout();
+            }, 200);
+
             document.getElementById('verdict-banner').classList.add('hidden');
             document.getElementById('test-summary').textContent = `${q.total_tests} test cases`;
 
@@ -661,9 +725,14 @@
 
         function closeResultsPanel() {
             const rPanel = document.getElementById('results-panel');
+            const editorWrap = document.getElementById('editor-wrap');
             rPanel.classList.add('hidden');
             rPanel.classList.remove('flex');
-            // Re-adjust monaco size
+            // Reset editor to take all space
+            editorWrap.style.flex = '1 1 100%';
+            editorWrap.style.height = '';
+            rPanel.style.flex = '1 1 50%';
+            rPanel.style.height = '';
             setTimeout(() => monacoEditor && monacoEditor.layout(), 100);
         }
 
@@ -718,8 +787,16 @@
 
                 document.getElementById('results-summary').textContent = `${res.results.filter(r => r.passed).length}/${res.results.length} passed`;
                 const rPanel = document.getElementById('results-panel');
+                const editorWrap = document.getElementById('editor-wrap');
+                // 50:50 split by default
+                editorWrap.style.flex = 'none';
+                const totalH = document.getElementById('split-container').getBoundingClientRect().height;
+                editorWrap.style.height = Math.max(80, Math.floor(totalH / 2)) + 'px';
+                rPanel.style.flex = 'none';
+                rPanel.style.height = Math.max(80, Math.floor(totalH / 2)) + 'px';
                 rPanel.classList.remove('hidden');
                 rPanel.classList.add('flex');
+                setTimeout(() => monacoEditor && monacoEditor.layout(), 50);
 
                 const verdict = document.getElementById('verdict-banner');
                 if (res.all_passed) {
