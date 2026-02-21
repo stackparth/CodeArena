@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodeArena</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
+                    },
+                    colors: {
+                        background: "hsl(240 10% 3.9%)",
+                        foreground: "hsl(0 0% 98%)",
+                        card: "hsl(240 10% 3.9%)",
+                        "card-foreground": "hsl(0 0% 98%)",
+                        popover: "hsl(240 10% 3.9%)",
+                        "popover-foreground": "hsl(0 0% 98%)",
+                        primary: "hsl(0 0% 98%)",
+                        "primary-foreground": "hsl(240 5.9% 10%)",
+                        secondary: "hsl(240 3.7% 15.9%)",
+                        "secondary-foreground": "hsl(0 0% 98%)",
+                        muted: "hsl(240 3.7% 15.9%)",
+                        "muted-foreground": "hsl(240 5% 64.9%)",
+                        accent: "hsl(240 3.7% 15.9%)",
+                        "accent-foreground": "hsl(0 0% 98%)",
+                        destructive: "hsl(0 62.8% 30.6%)",
+                        "destructive-foreground": "hsl(0 0% 98%)",
+                        border: "hsl(240 3.7% 15.9%)",
+                        input: "hsl(240 3.7% 15.9%)",
+                        ring: "hsl(240 4.9% 83.9%)",
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" data-name="vs/editor/editor.main"
+        href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.min.css" />
+    <style>
+        body {
+            background-color: var(--background);
+            color: var(--foreground);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #3f3f46;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #52525b;
+        }
+
+        /* Notification slide */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notify-anim {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Shadcn-like utilities */
+        .btn-primary {
+            @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2;
+        }
+
+        .btn-secondary {
+            @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2;
+        }
+
+        .btn-ghost {
+            @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2;
+        }
+
+        .btn-destructive {
+            @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 h-9 px-4 py-2;
+        }
+
+        .card {
+            @apply rounded-xl border border-border bg-card text-card-foreground shadow;
+        }
+
+        .badge {
+            @apply inline-flex items-center rounded-md border border-border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+        }
+
+        .badge-outline {
+            @apply text-foreground;
+        }
+
+        .badge-primary {
+            @apply border-transparent bg-primary text-primary-foreground my-0.5;
+        }
+    </style>
+</head>
+
+<body class="bg-background text-foreground min-h-screen flex flex-col antialiased">
+
+    <!-- TOPBAR -->
+    <header
+        class="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div class="flex h-14 items-center px-6">
+            <div class="mr-4 flex items-center space-x-2">
+                <span class="font-bold tracking-tight text-lg">&lt;/CodeArena&gt;</span>
+            </div>
+            <div class="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+                <nav class="flex items-center space-x-6 text-sm font-medium">
+                    <button class="nav-tab transition-colors hover:text-primary text-muted-foreground active"
+                        onclick="switchView('dashboard')">Dashboard</button>
+                    <button class="nav-tab transition-colors hover:text-primary text-muted-foreground"
+                        onclick="switchView('history')">History</button>
+                    <button class="nav-tab transition-colors hover:text-primary text-muted-foreground"
+                        onclick="switchView('ranks')">Ranks</button>
+                </nav>
+                <div class="ml-4 flex items-center space-x-2 border-l border-border pl-4">
+                    <div class="badge badge-primary" id="points-display">0 pts</div>
+                    <div class="text-sm font-medium text-muted-foreground mr-2" id="rank-name">Code Newbie 🧒</div>
+                    <div class="text-sm font-medium flex items-center border-l border-border pl-3 ml-2"
+                        id="auth-username-display"></div>
+                    <button class="btn-ghost px-2 h-7 text-xs ml-2" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- NOTIFICATION -->
+    <div id="notification"
+        class="hidden fixed top-20 right-6 z-[100] rounded-lg border border-border bg-popover p-4 shadow-md notify-anim max-w-sm">
+    </div>
+
+    <!-- AUTH MODAL -->
+    <div id="auth-modal"
+        class="hidden fixed inset-0 z-[200] bg-background/90 backdrop-blur-sm flex items-center justify-center">
+        <div class="w-full max-w-md card p-6 shadow-lg">
+            <div class="flex justify-center mb-6">
+                <span class="font-bold tracking-tight text-2xl">&lt;/CodeArena&gt;</span>
+            </div>
+
+            <div id="login-form">
+                <h2 class="text-xl font-semibold mb-4 text-center">Login</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm font-medium">Username</label>
+                        <input type="text" id="login-username"
+                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">Password</label>
+                        <input type="password" id="login-password"
+                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    </div>
+                    <button class="btn-primary w-full" onclick="handleLogin()">Login</button>
+                </div>
+                <div class="mt-4 text-center text-sm text-muted-foreground">
+                    Don't have an account? <button class="text-primary hover:underline"
+                        onclick="toggleAuthMode()">Register</button>
+                </div>
+            </div>
+
+            <div id="register-form" class="hidden">
+                <h2 class="text-xl font-semibold mb-4 text-center">Create an Account</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm font-medium">Username</label>
+                        <input type="text" id="reg-username"
+                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">Password</label>
+                        <input type="password" id="reg-password"
+                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    </div>
+                    <button class="btn-primary w-full" onclick="handleRegister()">Register</button>
+                </div>
+                <div class="mt-4 text-center text-sm text-muted-foreground">
+                    Already have an account? <button class="text-primary hover:underline"
+                        onclick="toggleAuthMode()">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SKIP MODAL -->
+    <div id="skip-modal" class="hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+        <div
+            class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-background p-6 shadow-lg duration-200 sm:rounded-lg">
+            <div class="flex flex-col space-y-1.5 text-center sm:text-left">
+                <h2 class="text-lg font-semibold leading-none tracking-tight">Skip This Question?</h2>
+                <p class="text-sm text-muted-foreground pb-4">The question will be saved and you can come back to it
+                    anytime from the Dashboard.</p>
+            </div>
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+                <button class="btn-ghost" onclick="closeSkipModal()">Cancel</button>
+                <button class="btn-destructive" onclick="confirmSkip()">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN VIEWS WRAPPER -->
+    <div class="flex-1 overflow-hidden relative" style="height: calc(100vh - 56px);">
+
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboard-view" class="view active h-full overflow-y-auto p-6 lg:p-10 max-w-6xl mx-auto">
+
+            <div class="grid gap-4 md:grid-cols-3 mb-8">
+                <div class="card p-6">
+                    <div
+                        class="flex flex-row items-center justify-between space-y-0 text-sm font-medium text-muted-foreground mb-2">
+                        Total Points</div>
+                    <div class="text-2xl font-bold" id="stat-points">0</div>
+                    <p class="text-xs text-muted-foreground mt-1">Keep grinding 🔥</p>
+                </div>
+                <div class="card p-6">
+                    <div
+                        class="flex flex-row items-center justify-between space-y-0 text-sm font-medium text-muted-foreground mb-2">
+                        Solved</div>
+                    <div class="text-2xl font-bold" id="stat-solved">0</div>
+                    <p class="text-xs text-muted-foreground mt-1">out of 10 questions</p>
+                </div>
+                <div class="card p-6">
+                    <div
+                        class="flex flex-row items-center justify-between space-y-0 text-sm font-medium text-muted-foreground mb-2">
+                        Skipped</div>
+                    <div class="text-2xl font-bold" id="stat-skipped">0</div>
+                    <p class="text-xs text-muted-foreground mt-1">come back anytime</p>
+                </div>
+            </div>
+
+            <div class="card p-6 mb-8 flex items-center space-x-6">
+                <div class="text-5xl" id="rank-icon">🧒</div>
+                <div class="flex-1">
+                    <h3 class="text-2xl font-semibold tracking-tight" id="rank-title-display">Code Newbie</h3>
+                    <p class="text-sm text-muted-foreground uppercase tracking-widest mt-1" id="rank-tier-display">
+                        BEGINNER TIER</p>
+
+                    <div class="mt-4">
+                        <div class="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                            <span id="prog-left">0</span>
+                            <span id="progress-next">Next: ...</span>
+                            <span id="prog-right">500</span>
+                        </div>
+                        <div class="h-2 w-full rounded-full bg-secondary">
+                            <div class="h-full rounded-full bg-primary transition-all duration-500" id="rank-progress"
+                                style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold tracking-tight">Questions</h2>
+                <button class="btn-primary" onclick="openRandomQuestion()">⚡ Random Question</button>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mb-6" id="filter-bar">
+                <button
+                    class="filter-btn badge badge-outline hover:bg-secondary cursor-pointer bg-primary text-primary-foreground"
+                    onclick="setFilter('All',this)">All</button>
+                <button class="filter-btn badge badge-outline hover:bg-secondary cursor-pointer"
+                    onclick="setFilter('Easy',this)">Easy</button>
+                <button class="filter-btn badge badge-outline hover:bg-secondary cursor-pointer"
+                    onclick="setFilter('Medium',this)">Medium</button>
+                <button class="filter-btn badge badge-outline hover:bg-secondary cursor-pointer"
+                    onclick="setFilter('Solved',this)">Solved</button>
+                <button class="filter-btn badge badge-outline hover:bg-secondary cursor-pointer"
+                    onclick="setFilter('Skipped',this)">Skipped</button>
+            </div>
+
+            <div id="q-list" class="space-y-3"></div>
+        </div>
+
+        <!-- SOLVE VIEW -->
+        <div id="solve-view" class="view h-full overflow-hidden">
+            <div class="flex h-full">
+                <!-- LEFT: PROBLEM -->
+                <div class="w-[380px] border-r border-border bg-card flex flex-col overflow-y-auto shrink-0">
+                    <div class="p-6 border-b border-border">
+                        <h2 class="text-lg font-semibold tracking-tight mb-3" id="q-title-display"></h2>
+                        <div class="flex flex-wrap items-center gap-2 mb-4">
+                            <span class="badge badge-outline text-xs" id="q-diff-badge"></span>
+                            <span class="badge text-primary bg-primary/10 border-transparent text-xs"
+                                id="q-pts-badge"></span>
+                            <span id="q-solved-badge" class="hidden text-xs font-bold text-green-500">✓ SOLVED</span>
+                        </div>
+                        <div id="q-tags" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+
+                    <div class="p-6 flex-1 text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap font-sans"
+                        id="q-description"></div>
+
+                    <div class="p-4 border-t border-border mt-auto">
+                        <button
+                            class="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center transition-colors"
+                            onclick="toggleHint()">
+                            <span id="hint-icon" class="mr-2">▶</span> Show Hint
+                        </button>
+                        <div id="hint-text"
+                            class="hidden mt-3 p-3 bg-secondary rounded-md text-sm text-muted-foreground border-l-2 border-primary">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: EDITOR + RESULTS -->
+                <div class="flex-1 flex flex-col min-w-0 bg-background relative">
+                    <div
+                        class="flex items-center justify-between px-4 py-2 border-b border-border bg-card w-full shrink-0">
+                        <span class="text-xs font-mono px-2 py-1 bg-secondary rounded text-muted-foreground">PYTHON
+                            3</span>
+                        <div class="flex space-x-2">
+                            <button class="btn-ghost" onclick="resetCode()">Reset</button>
+                            <button class="btn-ghost text-muted-foreground hover:text-foreground"
+                                onclick="openSkipModal()">Skip</button>
+                            <button class="btn-secondary" onclick="switchView('dashboard')">Back</button>
+                        </div>
+                    </div>
+
+                    <div id="editor-wrap" class="flex-1 shrink-0 min-h-0 relative">
+                        <div id="monaco-editor" class="absolute inset-0"></div>
+                    </div>
+
+                    <div id="verdict-banner"
+                        class="hidden px-4 py-3 text-sm font-medium text-center border-t border-border shrink-0"></div>
+
+                    <div id="results-panel"
+                        class="hidden bg-card border-t border-border max-h-[30vh] overflow-y-auto shrink-0 flex-col">
+                        <div
+                            class="flex items-center justify-between px-4 py-2 border-b border-border sticky top-0 bg-card z-10">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Test
+                                Results</span>
+                            <span id="results-summary" class="text-xs text-muted-foreground"></span>
+                        </div>
+                        <div id="results-body" class="divide-y divide-border"></div>
+                    </div>
+
+                    <div class="flex items-center justify-between px-4 py-3 border-t border-border bg-card shrink-0">
+                        <div id="test-summary" class="text-sm text-muted-foreground">Run your code against test cases
+                        </div>
+                        <button class="btn-primary flex items-center" id="submit-btn" onclick="submitCode()">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
+                                </path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Run &amp; Submit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY VIEW -->
+        <div id="history-view" class="view h-full overflow-y-auto p-6 lg:p-10 max-w-4xl mx-auto">
+            <h2 class="text-2xl font-semibold tracking-tight mb-6">Submission History</h2>
+            <div id="history-list" class="space-y-4"></div>
+        </div>
+
+        <!-- RANKS VIEW -->
+        <div id="ranks-view" class="view h-full overflow-y-auto p-6 lg:p-10 max-w-5xl mx-auto">
+            <h2 class="text-2xl font-semibold tracking-tight mb-8">Rank System</h2>
+            <div class="grid md:grid-cols-2 gap-8" id="ranks-grid"></div>
+        </div>
+
+    </div>
+
+    <!-- MONACO LOADER -->
+    <script>var require = { paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } };</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.nls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.js"></script>
+
+    <script>
+        // ─── STATE ───────────────────────────────────────────────────
+        let token = localStorage.getItem("arena_token");
+        let USER_ID = localStorage.getItem("arena_uid");
+
+        let state = {
+            points: 0, solved: [], skipped: [],
+            rank: {}, next_rank: null,
+            currentQ: null, allQuestions: [],
+            filter: "All",
+        };
+        let monacoEditor = null;
+        let hintVisible = false;
+
+        // ─── MONACO SETUP ────────────────────────────────────────────
+        require(['vs/editor/editor.main'], function () {
+            monaco.editor.defineTheme('shadcn', {
+                base: 'vs-dark', inherit: true,
+                rules: [
+                    { token: 'keyword', foreground: 'c678dd' },
+                    { token: 'string', foreground: '98c379' },
+                    { token: 'comment', foreground: '5c6370' },
+                    { token: 'number', foreground: 'd19a66' },
+                    { token: 'type', foreground: 'e5c07b' },
+                    { token: 'function', foreground: '61afef' },
+                ],
+                colors: {
+                    'editor.background': '#09090b', // zinc-950
+                    'editor.foreground': '#fafafa',
+                    'editorCursor.foreground': '#fafafa',
+                    'editor.lineHighlightBackground': '#27272a80', // zinc-800 mostly transparent
+                    'editorLineNumber.foreground': '#52525b',
+                    'editorLineNumber.activeForeground': '#a1a1aa',
+                    'editor.selectionBackground': '#3f3f46',
+                    'editorIndentGuide.background': '#27272a',
+                }
+            });
+            monacoEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                value: '# Your code here\n',
+                language: 'python',
+                theme: 'shadcn',
+                fontSize: 14,
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                lineHeight: 24,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                padding: { top: 24, bottom: 24 },
+                renderLineHighlight: 'all',
+                cursorBlinking: 'smooth',
+                smoothScrolling: true,
+                tabSize: 4,
+                insertSpaces: true,
+                wordWrap: 'on',
+                contextmenu: false,
+                overviewRulerLanes: 0,
+                hideCursorInOverviewRuler: true,
+                glyphMargin: false,
+                folding: true,
+            });
+            const ro = new ResizeObserver(() => monacoEditor.layout());
+            ro.observe(document.getElementById('editor-wrap'));
+        });
+
+        // ─── API ─────────────────────────────────────────────────────
+        async function api(path, method = 'GET', body = null) {
+            const opts = { method, headers: { 'Content-Type': 'application/json' } };
+            if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+            if (body) opts.body = JSON.stringify(body);
+            const r = await fetch(path, opts);
+            if (r.status === 401) {
+                logout();
+                throw new Error("Unauthorized");
+            }
+            return r.json();
+        }
+
+        // ─── INIT ────────────────────────────────────────────────────
+        async function init() {
+            if (!token || !USER_ID) {
+                document.getElementById("auth-modal").classList.remove("hidden");
+                return;
+            }
+            const [user, questions, ranks] = await Promise.all([
+                api(`/api/user/${USER_ID}`),
+                api('/api/questions'),
+                api('/api/ranks'),
+            ]);
+            state.points = user.points;
+            state.solved = user.solved;
+            state.skipped = user.skipped;
+            state.rank = user.rank;
+            state.next_rank = user.next_rank;
+            state.allQuestions = questions;
+            updateTopbar();
+            renderDashboard();
+            renderRanks(ranks, user.rank);
+        }
+
+        // ─── TOPBAR ──────────────────────────────────────────────────
+        function updateTopbar() {
+            document.getElementById('points-display').textContent = state.points.toLocaleString() + ' pts';
+            document.getElementById('rank-name').textContent = state.rank.icon + ' ' + state.rank.name;
+            document.getElementById('auth-username-display').textContent = USER_ID;
+        }
+
+        // ─── DASHBOARD ───────────────────────────────────────────────
+        function renderDashboard() {
+            document.getElementById('stat-points').textContent = state.points.toLocaleString();
+            document.getElementById('stat-solved').textContent = state.solved.length;
+            document.getElementById('stat-skipped').textContent = state.skipped.filter(s => !state.solved.includes(s)).length;
+
+            document.getElementById('rank-icon').textContent = state.rank.icon;
+            document.getElementById('rank-title-display').textContent = state.rank.name;
+            document.getElementById('rank-tier-display').textContent = (state.rank.tier || '').toUpperCase() + ' TIER';
+
+            if (state.next_rank) {
+                const pct = ((state.points - state.rank.min) / (state.next_rank.min - state.rank.min)) * 100;
+                document.getElementById('rank-progress').style.width = Math.min(pct, 100) + '%';
+                document.getElementById('progress-next').textContent = 'Next: ' + state.next_rank.icon + ' ' + state.next_rank.name;
+                document.getElementById('prog-left').textContent = state.points.toLocaleString();
+                document.getElementById('prog-right').textContent = state.next_rank.min.toLocaleString();
+            } else {
+                document.getElementById('rank-progress').style.width = '100%';
+                document.getElementById('progress-next').textContent = '🏆 MAX RANK!';
+            }
+            renderQuestionList();
+        }
+
+        function setFilter(f, el) {
+            state.filter = f;
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('bg-primary', 'text-primary-foreground');
+                b.classList.add('bg-transparent');
+            });
+            el.classList.add('bg-primary', 'text-primary-foreground');
+            el.classList.remove('bg-transparent');
+            renderQuestionList();
+        }
+
+        function renderQuestionList() {
+            let qs = state.allQuestions;
+            if (state.filter === 'Easy') qs = qs.filter(q => q.difficulty === 'Easy');
+            else if (state.filter === 'Medium') qs = qs.filter(q => q.difficulty === 'Medium');
+            else if (state.filter === 'Solved') qs = qs.filter(q => state.solved.includes(q.id));
+            else if (state.filter === 'Skipped') qs = qs.filter(q => state.skipped.includes(q.id) && !state.solved.includes(q.id));
+
+            const el = document.getElementById('q-list');
+            if (!qs.length) { el.innerHTML = '<div class="text-sm text-muted-foreground py-4">No questions match this filter.</div>'; return; }
+            el.innerHTML = qs.map(q => {
+                const solved = state.solved.includes(q.id);
+                const skipped = state.skipped.includes(q.id) && !solved;
+                return `
+      <div class="card p-4 flex items-center gap-4 cursor-pointer hover:border-primary/50 transition-colors ${solved ? 'border-green-500/20 bg-green-500/5' : skipped ? 'opacity-70' : ''}" onclick="openQuestion(${q.id})">
+        <div class="w-10 h-10 rounded bg-secondary flex items-center justify-center font-bold text-sm shrink-0 ${solved ? 'text-green-500' : ''}">${solved ? '✓' : q.id}</div>
+        <div class="flex-1 min-w-0">
+          <h4 class="text-sm font-semibold truncate">${q.title}</h4>
+          <div class="flex flex-wrap gap-2 mt-1.5 items-center">
+            <span class="text-[10px] font-medium px-2 py-0.5 rounded-full border border-border">${q.difficulty}</span>
+            <span class="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">+${q.points}pts</span>
+            ${skipped ? '<span class="text-[10px] text-muted-foreground ml-2">⏭ skipped</span>' : ''}
+          </div>
+        </div>
+        <div class="text-muted-foreground mr-2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+      </div>
+    `;
+            }).join('');
+        }
+
+        // ─── QUESTION OPEN ───────────────────────────────────────────
+        async function openQuestion(qid) {
+            const q = await api(`/api/question/${qid}`);
+            state.currentQ = q;
+            document.getElementById('q-title-display').textContent = '#' + q.id + ' — ' + q.title;
+            document.getElementById('q-diff-badge').textContent = q.difficulty;
+            document.getElementById('q-pts-badge').textContent = '+' + q.points + ' pts';
+
+            const solvedBadge = document.getElementById('q-solved-badge');
+            if (state.solved.includes(q.id)) { solvedBadge.classList.remove('hidden'); } else { solvedBadge.classList.add('hidden'); }
+
+            document.getElementById('q-tags').innerHTML = q.tags.map(t => `<span class="badge badge-outline text-[10px] px-1.5 py-0 bg-secondary">#${t}</span>`).join('');
+            document.getElementById('q-description').textContent = q.description;
+            document.getElementById('hint-text').textContent = q.hint;
+            document.getElementById('hint-text').classList.add('hidden');
+            document.getElementById('hint-icon').textContent = '▶';
+            hintVisible = false;
+
+            if (monacoEditor) {
+                monacoEditor.setValue(q.starter);
+                // ensure layout adjusts
+                setTimeout(() => monacoEditor.layout(), 100);
+            }
+
+            const rPanel = document.getElementById('results-panel');
+            rPanel.classList.add('hidden');
+            rPanel.classList.remove('flex');
+            document.getElementById('verdict-banner').classList.add('hidden');
+            document.getElementById('test-summary').textContent = `${q.total_tests} test cases`;
+
+            switchView('solve');
+        }
+
+        async function openRandomQuestion() {
+            const excluded = [...state.solved, ...state.skipped].join(',');
+            const q = await api(`/api/random-question?exclude=${excluded}`);
+            openQuestion(q.id);
+        }
+
+        function resetCode() {
+            if (state.currentQ && monacoEditor) monacoEditor.setValue(state.currentQ.starter);
+        }
+
+        // ─── SUBMIT ──────────────────────────────────────────────────
+        async function submitCode() {
+            if (!state.currentQ || !monacoEditor) return;
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner mr-2"></span> Running...';
+            const rPanel = document.getElementById('results-panel');
+            rPanel.classList.add('hidden');
+            rPanel.classList.remove('flex');
+            document.getElementById('verdict-banner').classList.add('hidden');
+
+            const code = monacoEditor.getValue();
+            try {
+                const res = await api('/api/submit', 'POST', {
+                    user_id: USER_ID,
+                    question_id: state.currentQ.id,
+                    code
+                });
+
+                state.points = res.total_points;
+                state.rank = res.rank;
+                if (res.all_passed && !state.solved.includes(state.currentQ.id)) {
+                    state.solved.push(state.currentQ.id);
+                }
+                updateTopbar();
+
+                const body = document.getElementById('results-body');
+                body.innerHTML = res.results.map(r => `
+      <div class="px-4 py-3 text-sm">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-2 h-2 rounded-full ${r.passed ? 'bg-green-500' : 'bg-destructive'}"></div>
+          <code class="text-xs bg-secondary px-1.5 py-0.5 rounded text-foreground font-mono flex-1">${r.input}</code>
+          <span class="text-xs font-bold ${r.passed ? 'text-green-500' : 'text-destructive'}">${r.passed ? 'PASS' : 'FAIL'}</span>
+        </div>
+        <div class="pl-5 space-y-1">
+          <div class="text-xs text-green-500"><span class="text-muted-foreground mr-1">Expected:</span>${r.expected}</div>
+          ${!r.passed ? `<div class="text-xs text-destructive"><span class="text-muted-foreground mr-1">Got:</span>${r.got}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+                document.getElementById('results-summary').textContent = `${res.results.filter(r => r.passed).length}/${res.results.length} passed`;
+                rPanel.classList.remove('hidden');
+                rPanel.classList.add('flex');
+
+                const verdict = document.getElementById('verdict-banner');
+                if (res.all_passed) {
+                    verdict.textContent = res.points_earned > 0 ? `🎉 ALL TESTS PASSED — +${res.points_earned} pts earned!` : '✓ All tests passed! (already solved)';
+                    verdict.className = 'px-4 py-3 text-sm font-medium text-center shrink-0 border-t border-green-500 bg-green-500/10 text-green-500';
+                    document.getElementById('q-solved-badge').classList.remove('hidden');
+                    notify(res.points_earned > 0 ? `+${res.points_earned} pts!` : 'Already solved!', 'success');
+                } else {
+                    const passed = res.results.filter(r => r.passed).length;
+                    verdict.textContent = `✗ ${passed}/${res.results.length} tests passed. Keep fighting!`;
+                    verdict.className = 'px-4 py-3 text-sm font-medium text-center shrink-0 border-t border-destructive bg-destructive/10 text-destructive';
+                    notify(`${passed}/${res.results.length} tests passed`, 'error');
+                }
+                verdict.classList.remove('hidden');
+
+                setTimeout(() => {
+                    rPanel.scrollTop = 0;
+                }, 50);
+
+            } catch (e) {
+                notify('Server error. Try again.', 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = `<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Run &amp; Submit`;
+        }
+
+        // ─── SKIP ────────────────────────────────────────────────────
+        function openSkipModal() { document.getElementById('skip-modal').classList.remove('hidden'); }
+        function closeSkipModal() { document.getElementById('skip-modal').classList.add('hidden'); }
+        async function confirmSkip() {
+            if (!state.currentQ) return;
+            closeSkipModal();
+            await api('/api/skip', 'POST', { user_id: USER_ID, question_id: state.currentQ.id });
+            if (!state.skipped.includes(state.currentQ.id)) state.skipped.push(state.currentQ.id);
+            notify('Question skipped. You can revisit it anytime.', 'success');
+            switchView('dashboard');
+            renderDashboard();
+        }
+
+        // ─── HINT ────────────────────────────────────────────────────
+        function toggleHint() {
+            hintVisible = !hintVisible;
+            const t = document.getElementById('hint-text');
+            if (hintVisible) t.classList.remove('hidden'); else t.classList.add('hidden');
+            document.getElementById('hint-icon').textContent = hintVisible ? '▼' : '▶';
+        }
+
+        // ─── HISTORY ─────────────────────────────────────────────────
+        async function loadHistory() {
+            const history = await api(`/api/history/${USER_ID}`);
+            const el = document.getElementById('history-list');
+            if (!history.length) { el.innerHTML = '<div class="text-sm text-muted-foreground p-4">No submissions yet.</div>'; return; }
+            el.innerHTML = history.map(h => `
+    <div class="card p-5">
+      <div class="flex justify-between items-start mb-3">
+        <div>
+          <h4 class="font-semibold text-sm">#${h.question_id} — ${h.question_title || 'Question ' + h.question_id}</h4>
+          <div class="flex items-center gap-2 mt-1.5">
+            <span class="badge badge-outline text-[10px] py-0">${h.difficulty || ''}</span>
+            <span class="text-xs font-bold ${h.all_passed ? 'text-green-500' : 'text-destructive'}">${h.all_passed ? '✓ PASSED' : '✗ FAILED'}</span>
+            ${h.points_earned > 0 ? `<span class="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded ml-1">+${h.points_earned}pts</span>` : ''}
+          </div>
+        </div>
+        <div class="text-[10px] text-muted-foreground">${h.attempted_at ? new Date(h.attempted_at).toLocaleString() : ''}</div>
+      </div>
+      <pre class="bg-secondary/50 p-3 rounded-md text-xs font-mono text-muted-foreground overflow-x-auto max-h-40 overflow-y-auto border border-border">${escHtml(h.code || '')}</pre>
+    </div>
+  `).join('');
+        }
+
+        // ─── RANKS ───────────────────────────────────────────────────
+        function renderRanks(ranks, currentRank) {
+            const tiers = ['Beginner', 'Intermediate', 'Advanced', 'Elite'];
+            const tierIcons = { Beginner: '🥉', Intermediate: '🥈', Advanced: '🥇', Elite: '🏆' };
+            const grid = document.getElementById('ranks-grid');
+            grid.innerHTML = tiers.map(tier => {
+                const tierRanks = ranks.filter(r => r.tier === tier);
+                return `<div class="space-y-3 mb-6">
+      <h3 class="font-semibold text-sm border-b border-border pb-2 flex items-center gap-2"><span>${tierIcons[tier]}</span> ${tier} Tier</h3>
+      <div class="space-y-1.5">
+      ${tierRanks.map(r => `
+        <div class="flex justify-between items-center p-3 rounded-lg border ${r.name === currentRank.name ? 'border-primary bg-primary/5' : 'border-border bg-card'} text-sm">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">${r.icon}</span>
+            <span class="font-medium ${r.name === currentRank.name ? 'text-primary' : ''}">${r.name}</span>
+            ${r.name === currentRank.name ? '<span class="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-bold">YOU</span>' : ''}
+          </div>
+          <div class="text-xs font-mono text-muted-foreground">${r.min.toLocaleString()} – ${r.max >= 999999 ? '∞' : r.max.toLocaleString()}</div>
+        </div>
+      `).join('')}
+      </div>
+    </div>`;
+            }).join('');
+        }
+
+        // ─── AUTHENTICATION ──────────────────────────────────────────
+        function toggleAuthMode() {
+            document.getElementById("login-form").classList.toggle("hidden");
+            document.getElementById("register-form").classList.toggle("hidden");
+        }
+
+        async function handleLogin() {
+            const u = document.getElementById("login-username").value;
+            const p = document.getElementById("login-password").value;
+            if (!u || !p) return notify("Please fill all fields", "error");
+
+            try {
+                const res = await fetch("/api/login", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Login failed");
+
+                token = data.access_token;
+                USER_ID = data.user_id;
+                localStorage.setItem("arena_token", token);
+                localStorage.setItem("arena_uid", USER_ID);
+
+                document.getElementById("auth-modal").classList.add("hidden");
+                notify("Logged in successfully!");
+                init(); // load data
+            } catch (e) {
+                notify(e.message, "error");
+            }
+        }
+
+        async function handleRegister() {
+            const u = document.getElementById("reg-username").value;
+            const p = document.getElementById("reg-password").value;
+            if (!u || !p) return notify("Please fill all fields", "error");
+
+            try {
+                const res = await fetch("/api/register", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Registration failed");
+
+                notify("Registered successfully. Please login.");
+                toggleAuthMode();
+            } catch (e) {
+                notify(e.message, "error");
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("arena_token");
+            localStorage.removeItem("arena_uid");
+            location.reload();
+        }
+
+        // ─── AUTHENTICATION ──────────────────────────────────────────
+        function toggleAuthMode() {
+            document.getElementById("login-form").classList.toggle("hidden");
+            document.getElementById("register-form").classList.toggle("hidden");
+        }
+
+        async function handleLogin() {
+            const u = document.getElementById("login-username").value;
+            const p = document.getElementById("login-password").value;
+            if (!u || !p) return notify("Please fill all fields", "error");
+
+            try {
+                const res = await fetch("/api/login", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Login failed");
+
+                token = data.access_token;
+                USER_ID = data.user_id;
+                localStorage.setItem("arena_token", token);
+                localStorage.setItem("arena_uid", USER_ID);
+
+                document.getElementById("auth-modal").classList.add("hidden");
+                notify("Logged in successfully!");
+                init(); // load data
+            } catch (e) {
+                notify(e.message, "error");
+            }
+        }
+
+        async function handleRegister() {
+            const u = document.getElementById("reg-username").value;
+            const p = document.getElementById("reg-password").value;
+            if (!u || !p) return notify("Please fill all fields", "error");
+
+            try {
+                const res = await fetch("/api/register", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Registration failed");
+
+                notify("Registered successfully. Please login.");
+                toggleAuthMode();
+            } catch (e) {
+                notify(e.message, "error");
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("arena_token");
+            localStorage.removeItem("arena_uid");
+            location.reload();
+        }
+
+        // ─── VIEW SWITCHING ──────────────────────────────────────────
+        function switchView(name) {
+            ['dashboard', 'solve', 'history', 'ranks'].forEach(v => {
+                document.getElementById(v + '-view').classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(t => {
+                t.classList.remove('active', 'text-primary');
+                t.classList.add('text-muted-foreground');
+            });
+
+            if (name === 'dashboard') {
+                document.getElementById('dashboard-view').classList.add('active');
+                document.querySelectorAll('.nav-tab')[0].classList.add('active', 'text-primary');
+                document.querySelectorAll('.nav-tab')[0].classList.remove('text-muted-foreground');
+                renderDashboard();
+            } else if (name === 'solve') {
+                document.getElementById('solve-view').classList.add('active');
+                setTimeout(() => monacoEditor && monacoEditor.layout(), 150);
+            } else if (name === 'history') {
+                document.getElementById('history-view').classList.add('active');
+                document.querySelectorAll('.nav-tab')[1].classList.add('active', 'text-primary');
+                document.querySelectorAll('.nav-tab')[1].classList.remove('text-muted-foreground');
+                loadHistory();
+            } else if (name === 'ranks') {
+                document.getElementById('ranks-view').classList.add('active');
+                document.querySelectorAll('.nav-tab')[2].classList.add('active', 'text-primary');
+                document.querySelectorAll('.nav-tab')[2].classList.remove('text-muted-foreground');
+            }
+        }
+
+        // ─── NOTIFY ──────────────────────────────────────────────────
+        let notifyTimer;
+        function notify(msg, type = 'success') {
+            const el = document.getElementById('notification');
+            el.textContent = msg;
+            if (type === 'error') {
+                el.classList.add('border-destructive', 'text-destructive');
+                el.classList.remove('border-border', 'text-foreground');
+            } else {
+                el.classList.add('border-border', 'text-foreground');
+                el.classList.remove('border-destructive', 'text-destructive');
+            }
+
+            el.classList.remove('hidden');
+            el.classList.remove('notify-anim');
+            void el.offsetWidth;
+            el.classList.add('notify-anim');
+
+            clearTimeout(notifyTimer);
+            notifyTimer = setTimeout(() => {
+                el.classList.add('hidden');
+                el.classList.remove('notify-anim');
+            }, 3500);
+        }
+
+        // ─── UTILS ───────────────────────────────────────────────────
+        function escHtml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
