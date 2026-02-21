@@ -1,6 +1,6 @@
 fastapi
-uvicorn
-pymongo
+uvicorn[standard]
+pymongo[srv]
 pydantic
 python-dotenv
 passlib

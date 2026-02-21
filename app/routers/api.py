@@ -36,7 +36,7 @@ def login(user: UserLogin):
     return {"access_token": access_token, "token_type": "bearer", "user_id": db_user["username"]}
 
 @router.get("/random-question")
-def get_random_question(difficulty: str = None, exclude: str = ""):
+def get_random_question(difficulty: str | None = None, exclude: str = ""):
     excluded = [int(x) for x in exclude.split(",") if x.strip().isdigit()]
     pool = QUESTIONS
     if difficulty:
@@ -168,3 +168,13 @@ def get_history(user_id: str):
 @router.get("/ranks")
 def get_ranks():
     return RANKS
+
+@router.get("/leaderboard")
+def get_leaderboard():
+    users = list(users_col.find(
+        {},
+        {"_id": 0, "username": 1, "points": 1}
+    ).sort("points", -1).limit(100))
+    for u in users:
+        u["rank"] = get_rank(u["points"])
+    return users
