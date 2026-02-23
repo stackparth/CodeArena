@@ -322,6 +322,10 @@
                 <button class="filter-btn badge badge-outline hover:bg-secondary cursor-pointer"
                     onclick="setFilter('Medium',this)">Medium</button>
                 <button class="filter-btn badge badge-outline hover:bg-secondary cursor-pointer"
+                    onclick="setFilter('Hard',this)">Hard</button>
+                <button class="filter-btn badge badge-outline hover:bg-secondary cursor-pointer"
+                    onclick="setFilter('Advanced',this)">Advanced ⚡</button>
+                <button class="filter-btn badge badge-outline hover:bg-secondary cursor-pointer"
                     onclick="setFilter('Solved',this)">Solved</button>
                 <button class="filter-btn badge badge-outline hover:bg-secondary cursor-pointer"
                     onclick="setFilter('Skipped',this)">Skipped</button>
@@ -580,6 +584,7 @@
             if (diff === 'Easy') return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
             if (diff === 'Medium') return 'bg-green-500/10 text-green-500 border-green-500/20';
             if (diff === 'Hard') return 'bg-red-500/10 text-red-500 border-red-500/20';
+            if (diff === 'Advanced') return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
             return 'border-border text-foreground';
         }
 
@@ -651,6 +656,8 @@
             let qs = state.allQuestions;
             if (state.filter === 'Easy') qs = qs.filter(q => q.difficulty === 'Easy');
             else if (state.filter === 'Medium') qs = qs.filter(q => q.difficulty === 'Medium');
+            else if (state.filter === 'Hard') qs = qs.filter(q => q.difficulty === 'Hard');
+            else if (state.filter === 'Advanced') qs = qs.filter(q => q.difficulty === 'Advanced');
             else if (state.filter === 'Solved') qs = qs.filter(q => state.solved.includes(q.id));
             else if (state.filter === 'Skipped') qs = qs.filter(q => state.skipped.includes(q.id) && !state.solved.includes(q.id));
 
